@@ -15,7 +15,7 @@
     <div id="chart-ecg" class="container"></div>
 </body>
 <script>
-    let chartT = new Highcharts.Chart({
+    let ecg_chart = new Highcharts.Chart({
         chart: {
             renderTo : 'chart-ecg'
         },
@@ -52,21 +52,23 @@
             enabled: false
         }*/
     });
-    setInterval(function() {
-        let xhttp = new XMLHttpRequest();
-        xhttp.onreadystatechange = function() {
-            if (this.readyState == 4 && this.status == 200) {
-                let x = (new Date()).getTime(),
-                    y = parseFloat(this.responseText);
-                if(chartT.series[0].data.length > 500) {
-                    chartT.series[0].addPoint([x, y], true, true, false);
-                } else {
-                    chartT.series[0].addPoint([x, y], true, false, false);
-                }
-            }
-        };
-        xhttp.open("GET", "/ECG", true);
-        xhttp.send();
-    }, 10);
+
+    websocket = new WebSocket('ws://'+window.location.hostname+':81/');
+    websocket.onmessage = function(event) {
+        // JSONobj = JSON.parse(event.data);
+        //var pot = parseInt(JSONobj.POT);
+
+        let x = (new Date()).getTime();
+        let y = parseInt(event.data);
+
+        // let JSONobj = JSON.parse(event.data);
+        // let y = JSONobj.ECG;
+        
+        if(ecg_chart.series[0].data.length > 500) {
+            ecg_chart.series[0].addPoint([x, y], true, true, false);
+        } else {
+            ecg_chart.series[0].addPoint([x, y], true, false, false);
+        }
+    }
 </script>
 </html>
