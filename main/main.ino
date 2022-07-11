@@ -1,79 +1,105 @@
+/******************************************************************************/
+/**
+*   @file main.ino
+*   @author Espen Holsen
+*
+*   This program is intended for a ECG project in 
+*   IELET3109 - Advanced Sensor Systems at NTNU.
+*
+*   No license. Use however you want.    
+*/
+/******************************************************************************/
+
 #include <WiFi.h>
 #include <WebServer.h>
-#include <WebSocketServer.h>
+#include <WebSocketsServer.h>
 #include <SPIFFS.h>
-#include <Adafruit_ADS1015.h>
+#include <Adafruit_ADS1X15.h>
 
 Adafruit_ADS1115 adc;
-WebServer http(80);             // Create HTTP server object on port 80
-WebSocketsServer webSocket(81); // Create WebSockets server object on port 81
+WebServer http(80);             // HTTP server on port 80
+WebSocketsServer webSocket(81); // WebSockets server on port 81
 
 const char* SSID = "";
 const char* PASS = "";
 
+/******************************************************************************/
+/**
+*   @brief  Runs when a client sends a request to the IP. Opens the html file 
+*           in the "/data" directory. The file is returned to the client with
+*           a 200 OK response.        
+*/
+/******************************************************************************/
 void handleGetRequest() {
-    File webpage = SPIFFS.open("/index.html", "r"); // Open file located in data directory
-    http.streamFile(webpage, "text/html");          // Return webpage with 200 OK response
-    webpage.close();                                // Close the file to clear resources 
+    File webpage = SPIFFS.open("/index.html", "r");
+    http.streamFile(webpage, "text/html");
+    webpage.close();
 }
 
-void broadcastWebSocket(int16_t) {
+/******************************************************************************/
+/**
+ *  @brief  Non-blocking. Acquires reading from the ADC and calculates the
+ *          volts. The reading is formated as JSON and broadcasted to all 
+ *          WebSocket clients.
+ */
+/******************************************************************************/
+void broadcastWebSocket() {
     if (!adc.conversionComplete()) {
-        return; // Returns if no data is available
+        return; // Skip if no new reading is available
     }
     int16_t reading = adc.getLastConversionResults();
-    adc.startADCReading(ADS1X15_REG_CONFIG_MUX_DIFF_0_1, false);
-    // float volts = adc.computeVolts(reading)
-    
-    char json[14]; // int16_t is max 6 bytes when formated as char*
-    sprintf(json, "{\"ECG\":%d}", reading);
+    float volts = adc.computeVolts(reading);
+    char json[20];
+    sprintf(json, "{\"ECG\":%f}", volts);
     webSocket.broadcastTXT(json);
+    adc.startADCReading(ADS1X15_REG_CONFIG_MUX_DIFF_0_1, false);
 }
 
+/******************************************************************************/
+/**
+ *  @brief  Configures the ADC, WiFi, HTTP server and WebSockets server. 
+ *          Choose ADC gain so that the range is larger than the range of the
+ *          expected signal.
+ * 
+ *          Variable name:  Gain:       Range:      Resolution:
+ *          GAIN_TWOTHIRDS  2/3x gain   +/- 6.144V  0.1875mV
+ *          GAIN_ONE        1x gain     +/- 4.096V  0.125mV
+ *          GAIN_TWO        2x gain     +/- 2.048V  0.0625mV
+ *          GAIN_FOUR       4x gain     +/- 1.024V  0.03125mV
+ *          GAIN_EIGHT      8x gain     +/- 0.512V  0.015625mV
+ *          GAIN_SIXTEEN    16x gain    +/- 0.256V  0.0078125mV
+ */
+/******************************************************************************/
 void setup() {
-    Serial.begin(115200); // Serial port for debugging purposes
-
-    adc.setGain(GAIN_ONE); // TWOTHIRDS Remember multiplier
+    adc.setGain(GAIN_TWOTHIRDS);
     adc.begin();
-    // adc.startADCReading(ADS1X15_REG_CONFIG_MUX_DIFF_0_1, false); // Start first reading
+    adc.startADCReading(ADS1X15_REG_CONFIG_MUX_DIFF_0_1, false);
     
-    if (!SPIFFS.begin()) { // Initialize SPIFFS
-        Serial.println("An Error has occurred while mounting SPIFFS");
-    }
+    WiFi.begin(SSID, PASS);
+    Serial.begin(115200); // To show IP address
+    Serial.println("\nConnecting to WiFi:");
+    while (WiFi.status() != WL_CONNECTED);     
+    Serial.print("\tSSID: ");
+    Serial.println(SSID);
+    Serial.print("\tIP:   ");
+    Serial.println(WiFi.localIP());
+    Serial.end();
     
-    WiFi.begin(SSID, PASS); // Connect to Wi-Fi
-    while (WiFi.status() != WL_CONNECTED) {
-        delay(1000);
-        Serial.println("Connecting to WiFi..");
-    }
-    Serial.println(WiFi.localIP());  // Print ESP32 Local IP Address
-    
-    http.on("/", handleGetRequest); // The pointer to our function is passed
+    http.on("/", handleGetRequest); // Runs when <IP>/ is requested by client
     http.begin();
     webSocket.begin();
+    SPIFFS.begin();
 }
  
+/******************************************************************************/
+/**
+ *  @brief  Handles HTTP GET requests and WebSocket clients. Data is attempted 
+ *          to broadcast every iteration. Non-blocking. Code that blocks may
+ *          interfere with the servers.
+ */
+/******************************************************************************/
 void loop() {
     http.handleClient();
     webSocket.loop();
-
-    int16_t reading = adc.readADC_Differential_0_1(); // This line of code is blocking from execution until a conversion is done (worst case 1.16ms for 860S/s)
-    char* readingTxt = itoa(reading); // Convert int16_t to char*
-    webSocket.broadcastTXT(readingTxt); // This function cannot use ints larger than int8_t
+    broadcastWebSocket();
 }
-
-/*
-uint16_t pulseTrain(uint16_t period) {
-    static uint16_t time = millis();
-    static uint16_t state = false;
-    if ((millis() - time) > period/2) {
-        time = millis();
-        state = !state;
-    }
-    return state;
-}
-
-uint16_t waveform() {
-    return 100*pulseTrain(1000) + random(50) - 25;
-}
-*/

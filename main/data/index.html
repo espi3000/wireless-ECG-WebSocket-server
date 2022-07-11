@@ -2,19 +2,12 @@
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <script src="https://code.highcharts.com/highcharts.js"></script>
-    <style>
-        body {
-            min-width: 310px;
-        	max-width: 800px;
-        	height: 400px;
-            margin: 0 auto;
-        }
-    </style>
 </head>
 <body>
     <div id="chart-ecg" class="container"></div>
 </body>
 <script>
+    // https://api.highcharts.com/highcharts/
     let ecg_chart = new Highcharts.Chart({
         chart: {
             renderTo : 'chart-ecg'
@@ -27,14 +20,11 @@
             data: []
         }],
         plotOptions: {
-            line: { 
-                /*animation: false,
-                dataLabels: {
-                    enabled: true
-                }*/
-            },
             series: {
-                color: '#059e8a'
+                color: '#059e8a',
+                marker: {
+                    enabled: false
+                }
             }
         },
         xAxis: {
@@ -45,26 +35,16 @@
         },
         yAxis: {
             title: {
-                text: 'ECG'
+                text: 'Voltage [V]'
             }
-        },/*
-        credits: {
-            enabled: false
-        }*/
+        }
     });
 
-    websocket = new WebSocket('ws://'+window.location.hostname+':81/');
+    let websocket = new WebSocket('ws://'+window.location.hostname+':81/');
     websocket.onmessage = function(event) {
-        // JSONobj = JSON.parse(event.data);
-        //var pot = parseInt(JSONobj.POT);
-
         let x = (new Date()).getTime();
-        let y = parseInt(event.data);
-
-        // let JSONobj = JSON.parse(event.data);
-        // let y = JSONobj.ECG;
-        
-        if(ecg_chart.series[0].data.length > 500) {
+        let y = JSON.parse(event.data).ECG;
+        if(ecg_chart.series[0].data.length > 500) { // Limit amount of data visible
             ecg_chart.series[0].addPoint([x, y], true, true, false);
         } else {
             ecg_chart.series[0].addPoint([x, y], true, false, false);
