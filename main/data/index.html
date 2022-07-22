@@ -44,7 +44,7 @@
     websocket.onmessage = function(event) {
         let x = (new Date()).getTime();
         let y = JSON.parse(event.data).ECG;
-        if(ecg_chart.series[0].data.length > 500) { // Limit amount of data visible
+        if(ecg_chart.series[0].data.length > 350) { // Limit amount of data visible
             ecg_chart.series[0].addPoint([x, y], true, true, false);
         } else {
             ecg_chart.series[0].addPoint([x, y], true, false, false);

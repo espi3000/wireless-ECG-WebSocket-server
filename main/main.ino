@@ -20,8 +20,8 @@ Adafruit_ADS1115 adc;
 WebServer http(80);             // HTTP server on port 80
 WebSocketsServer webSocket(81); // WebSockets server on port 81
 
-const char* SSID = "";
-const char* PASS = "";
+const char* SSID = "Holsen 2.4";
+const char* PASS = "2311021058";
 
 /******************************************************************************/
 /**
@@ -40,26 +40,25 @@ void handleGetRequest() {
 /**
  *  @brief  Non-blocking. Acquires reading from the ADC and calculates the
  *          volts. The reading is formated as JSON and broadcasted to all 
- *          WebSocket clients.
+ *          WebSocket clients. Skips if no new reading is available.
  */
 /******************************************************************************/
 void broadcastWebSocket() {
-    if (!adc.conversionComplete()) {
-        return; // Skip if no new reading is available
+    if (adc.conversionComplete()) {
+        int16_t reading = adc.getLastConversionResults();
+        float volts = adc.computeVolts(reading);
+        char json[20];
+        sprintf(json, "{\"ECG\":%f}", volts);
+        webSocket.broadcastTXT(json);
+        adc.startADCReading(ADS1X15_REG_CONFIG_MUX_DIFF_0_1, false);
     }
-    int16_t reading = adc.getLastConversionResults();
-    float volts = adc.computeVolts(reading);
-    char json[20];
-    sprintf(json, "{\"ECG\":%f}", volts);
-    webSocket.broadcastTXT(json);
-    adc.startADCReading(ADS1X15_REG_CONFIG_MUX_DIFF_0_1, false);
 }
 
 /******************************************************************************/
 /**
  *  @brief  Configures the ADC, WiFi, HTTP server and WebSockets server. 
  *          Choose ADC gain so that the range is larger than the range of the
- *          expected signal.
+ *          expected signal. Sets data rate to 254 samples/s.
  * 
  *          Variable name:  Gain:       Range:      Resolution:
  *          GAIN_TWOTHIRDS  2/3x gain   +/- 6.144V  0.1875mV
@@ -71,12 +70,14 @@ void broadcastWebSocket() {
  */
 /******************************************************************************/
 void setup() {
-    adc.setGain(GAIN_TWOTHIRDS);
+    adc.setGain(GAIN_TWO);
+    adc.setDataRate(254);
     adc.begin();
     adc.startADCReading(ADS1X15_REG_CONFIG_MUX_DIFF_0_1, false);
     
     WiFi.begin(SSID, PASS);
     Serial.begin(115200); // To show IP address
+    Serial.println(adc.getDataRate());
     Serial.println("\nConnecting to WiFi:");
     while (WiFi.status() != WL_CONNECTED);     
     Serial.print("\tSSID: ");
