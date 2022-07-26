@@ -1,16 +1,19 @@
 <!DOCTYPE HTML><html>
 <head>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- Window size scales based on user device -->
+    <meta name="viewport" content="width=device-width, initial-scale=1"> 
+    <!-- Library for highcharts retrieved -->
     <script src="https://code.highcharts.com/highcharts.js"></script>
 </head>
 <body>
-    <div id="chart-ecg" class="container"></div>
+    <!-- This is the container where the chart is placed -->
+    <div id="chart-ecg" class="container"></div> 
 </body>
 <script>
-    // https://api.highcharts.com/highcharts/
-    let ecg_chart = new Highcharts.Chart({
+    // https://api.highcharts.com/highcharts/ to learn more
+    let ecg_chart = new Highcharts.Chart({ 
         chart: {
-            renderTo : 'chart-ecg'
+            renderTo : 'chart-ecg' // Notice: this is the container ID above
         },
         title: {
             text: 'ECG'
@@ -39,12 +42,13 @@
             }
         }
     });
-
-    let websocket = new WebSocket('ws://'+window.location.hostname+':81/');
+    // Retrieves IP you entered in address bar and opens a WebSocket
+    let websocket = new WebSocket('ws://'+window.location.hostname+':81/'); 
+    // This function runs everytime a message is received
     websocket.onmessage = function(event) {
         let x = (new Date()).getTime();
         let y = JSON.parse(event.data).ECG;
-        if(ecg_chart.series[0].data.length > 350) { // Limit amount of data visible
+        if(ecg_chart.series[0].data.length > 350) { // Limit amount of data visible on chart
             ecg_chart.series[0].addPoint([x, y], true, true, false);
         } else {
             ecg_chart.series[0].addPoint([x, y], true, false, false);

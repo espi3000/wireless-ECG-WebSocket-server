@@ -25,9 +25,9 @@ const char* PASS = "";
 
 /******************************************************************************/
 /**
-*   @brief  Runs when a client sends a request to the IP. Opens the html file 
-*           in the "/data" directory. The file is returned to the client with
-*           a 200 OK response.        
+*   @brief  Runs when a client sends a request to root/the IP. Opens the html 
+*           file in the "/data" directory. The file is returned to the client 
+*           with a 200 OK response.        
 */
 /******************************************************************************/
 void handleGetRequest() {
@@ -77,7 +77,6 @@ void setup() {
     
     WiFi.begin(SSID, PASS);
     Serial.begin(115200); // To show IP address
-    Serial.println(adc.getDataRate());
     Serial.println("\nConnecting to WiFi:");
     while (WiFi.status() != WL_CONNECTED);     
     Serial.print("\tSSID: ");
