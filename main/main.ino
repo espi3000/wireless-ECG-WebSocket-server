@@ -20,8 +20,8 @@ Adafruit_ADS1115 adc;
 WebServer http(80);             // HTTP server on port 80
 WebSocketsServer webSocket(81); // WebSockets server on port 81
 
-const char* SSID = "Holsen 2.4";
-const char* PASS = "2311021058";
+const char* SSID = "";
+const char* PASS = "";
 
 /******************************************************************************/
 /**
@@ -83,7 +83,7 @@ void setup() {
     Serial.println(SSID);
     Serial.print("\tIP:   ");
     Serial.println(WiFi.localIP());
-    //Serial.end();
+    Serial.end();
     
     http.on("/", handleGetRequest); // Runs when <IP>/ is requested by client
     http.begin();
