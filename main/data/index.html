@@ -43,7 +43,7 @@
         }
     });
     // Retrieves IP you entered in address bar and opens a WebSocket
-    let websocket = new WebSocket('ws://'+window.location.hostname+':81/'); 
+    let websocket = new WebSocket('ws://'+window.location.hostname+'/ws'); 
     // This function runs everytime a message is received
     websocket.onmessage = function(event) {
         let x = (new Date()).getTime();
