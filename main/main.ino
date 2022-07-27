@@ -20,8 +20,8 @@ Adafruit_ADS1115 adc;
 WebServer http(80);             // HTTP server on port 80
 WebSocketsServer webSocket(81); // WebSockets server on port 81
 
-const char* SSID = "";
-const char* PASS = "";
+const char* SSID = "Holsen 2.4";
+const char* PASS = "2311021058";
 
 /******************************************************************************/
 /**
@@ -46,11 +46,11 @@ void handleGetRequest() {
 void broadcastWebSocket() {
     if (adc.conversionComplete()) {
         int16_t reading = adc.getLastConversionResults();
+        adc.startADCReading(ADS1X15_REG_CONFIG_MUX_DIFF_0_1, false);
         float volts = adc.computeVolts(reading);
         char json[20];
         sprintf(json, "{\"ECG\":%f}", volts);
         webSocket.broadcastTXT(json);
-        adc.startADCReading(ADS1X15_REG_CONFIG_MUX_DIFF_0_1, false);
     }
 }
 
@@ -58,7 +58,7 @@ void broadcastWebSocket() {
 /**
  *  @brief  Configures the ADC, WiFi, HTTP server and WebSockets server. 
  *          Choose ADC gain so that the range is larger than the range of the
- *          expected signal. Sets data rate to 254 samples/s.
+ *          expected signal. Sets data rate to 860 samples/s.
  * 
  *          Variable name:  Gain:       Range:      Resolution:
  *          GAIN_TWOTHIRDS  2/3x gain   +/- 6.144V  0.1875mV
@@ -70,9 +70,9 @@ void broadcastWebSocket() {
  */
 /******************************************************************************/
 void setup() {
-    adc.setGain(GAIN_TWO);
-    adc.setDataRate(254);
     adc.begin();
+    adc.setGain(GAIN_TWO);
+    adc.setDataRate(RATE_ADS1115_860SPS);
     adc.startADCReading(ADS1X15_REG_CONFIG_MUX_DIFF_0_1, false);
     
     WiFi.begin(SSID, PASS);
@@ -83,7 +83,7 @@ void setup() {
     Serial.println(SSID);
     Serial.print("\tIP:   ");
     Serial.println(WiFi.localIP());
-    Serial.end();
+    //Serial.end();
     
     http.on("/", handleGetRequest); // Runs when <IP>/ is requested by client
     http.begin();
