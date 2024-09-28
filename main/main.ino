@@ -10,10 +10,17 @@
 */
 /******************************************************************************/
 
+#define using_arduino_ide_2_x_x 1
+#if using_arduino_ide_2_x_x
+    #include <LittleFS.h>
+    #define SPIFFS LittleFS
+#else
+    #include <SPIFFS.h>
+#endif
+
 #include <WiFi.h>
 #include <AsyncTCP.h>
 #include <ESPAsyncWebServer.h>
-#include <SPIFFS.h>
 #include <ADS1115_WE.h> 
 #include <Wire.h>
 
@@ -33,7 +40,6 @@ const char* PASS = "";
 /******************************************************************************/
 void broadcastWebSocket() {
     if (!adc.isBusy()) {
-        Serial.println(micros());
         float voltage = adc.getResult_V();
         adc.startSingleMeasurement();
         char json[20];
