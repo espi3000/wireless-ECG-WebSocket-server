@@ -90,7 +90,7 @@ void setup() {
     Serial.println(SSID);
     Serial.print("\tIP:   ");
     Serial.println(WiFi.localIP());
-    Serial.end();
+    //Serial.end(); // Newer versions of the ESP32 board drivers have issues with this
     
     http.on("/", handleGetRequest); // Runs when <IP>/ is requested by client
     http.begin();
